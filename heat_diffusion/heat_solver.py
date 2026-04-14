@@ -92,7 +92,8 @@ def plot_snapshots(snapshots, Nx):
 
 
 if __name__ == "__main__":
-    sr, audio = load_audio("song.wav")
+    original_song = "song"
+    sr, audio = load_audio(f"{original_song}.wav")
     audio = audio[:5 * sr]   # first 10 seconds
     audio = audio[::6]       # downsample by factor 6
     sr = sr // 6
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     plot_snapshots(snapshots, len(audio))
 
     for step, signal_at_step in snapshots.items():
-        filename = f"smoothed_step_{step}.wav"
+        filename = f"{original_song}_smoothed_{step}.wav"
         save_audio(filename, signal_at_step, sr)
 
     save_audio("smoothed_song.wav", smoothed, sr)
