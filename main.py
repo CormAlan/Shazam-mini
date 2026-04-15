@@ -5,9 +5,15 @@
 # 4. Ta fram peaks som punkter.
 # 5. Minstakvadratmetod som hittar den låt i en csv fil som är närmast.
 
+from app.create_heat_transform import SpectralMapAPI
 import heat_diffusion.heat_solver as hs
 
 if __name__ == "__main__":
+
+    prog = SpectralMapAPI().with_path("song").execute()
+    prog.map.plot()
+
+    """
     original_song = "song"
     sr, audio = hs.load_audio(f"{original_song}.wav")
     audio = audio[:10 * sr] # First ten seconds
@@ -24,3 +30,4 @@ if __name__ == "__main__":
     )
 
     hs.save_audio("smoothed_song.wav", smoothed, sr)
+    """
