@@ -15,8 +15,6 @@ def main():
     subsample = 10
     sublen = sr * subsample
 
-    plt.figure(figsize=(12, 6))
-
     for i in range(0, len(y_all) - int(sublen), int(sublen)):
 
         y = y_all[i : i + sublen]
@@ -28,7 +26,10 @@ def main():
         xf = fftfreq(N, T)
 
         mags = 2.0/N * np.abs(yf)
-        peaks = get_peaks(mags, xf)
+        pos_mask = xf > 0
+        xf_pos = xf[pos_mask]
+        mags_pos = mags[pos_mask]
+        peaks = get_peaks(mags_pos, xf_pos)
 
         peak_indices = np.where(peaks > 0)
 
