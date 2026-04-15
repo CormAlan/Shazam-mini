@@ -10,7 +10,12 @@ import heat_diffusion.heat_solver as hs
 
 if __name__ == "__main__":
 
-    prog = SpectralMapFactory().with_path("song").with_downscaling(24).execute()
+    prog = SpectralMapFactory().with_path("song").with_downscaling(1).execute()
+    #prog.plot_audio_downsampled()
+    #prog.plot_audio_smoothed()
+    prog.map.plot_freqs()
+
+    prog = SpectralMapFactory().with_path("song_1").with_downscaling(1).execute()
     #prog.plot_audio_downsampled()
     #prog.plot_audio_smoothed()
     prog.map.plot_freqs()

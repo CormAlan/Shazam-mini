@@ -30,18 +30,19 @@ class _SpectralMap:
                 magnitudes.append(p)
 
         if not times:
-            print("No peaks found to plot!")
+            print("No peaks found")
             return
 
         # Create the scatter plot
         plt.figure(figsize=(12, 6))
         scatter = plt.scatter(times, frequencies, c=magnitudes)
+        plt.yscale('log')
 
         plt.colorbar(scatter)
         plt.title('Spectral Map Peaks over Time')
         plt.xlabel('Sample index')
         plt.ylabel('Frequency 1000-Hz')
-        plt.ylim(20, max(frequencies))
+        plt.ylim(20, max(frequencies)*1.5)
         plt.grid(True)
         plt.show()
 
@@ -67,17 +68,18 @@ class _SpectralMap:
                 magnitudes.append(p)
 
         if not times:
-            print("No peaks found to plot!")
+            print("No peaks found")
             return
 
         # Create the scatter plot
         plt.figure(figsize=(12, 6))
-        scatter = plt.scatter(times, magnitudes, c=frequencies, cmap='viridis', alpha=0.7, s=20)
+        scatter = plt.scatter(times, magnitudes, c=frequencies)
+        plt.yscale('log')
 
         plt.colorbar(scatter, label='Amplitude')
         plt.title('Spectral Map Peaks over Time')
         plt.xlabel('Time (seconds)')
-        plt.ylabel('Frequency (Hz)')
+        plt.ylabel('Magnitude')
         plt.ylim(0, max(magnitudes))
         plt.show()
 
@@ -161,8 +163,8 @@ def get_peaks(mags, xf):
     peaks_final[top_indices] = mags[top_indices]
     freqs_final[top_indices] = xf[top_indices]
 
-    print(f"peaks_final {peaks_final}")
-    print(f"freqs_final {freqs_final}")
+    #print(f"peaks_final {peaks_final}")
+    #print(f"freqs_final {freqs_final}")
     
     return peaks_final, freqs_final
 
