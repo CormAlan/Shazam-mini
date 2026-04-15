@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
@@ -66,12 +67,14 @@ def solve_heat_equation_1d(signal, T, alpha, Nt, snapshot_indices=None):
     if 0 in snapshot_indices:
         snapshots[0] = u.copy()
 
-    for n in range(Nt):
+    for n in tqdm(range(Nt), desc="Solving heat equation on audio..."):
         u = heat_step(u, r)
 
-        step_number = n + 1
-        if step_number in snapshot_indices:
-            snapshots[step_number] = u.copy()
+        # remove snapshots for now
+
+        #step_number = n + 1
+        #if step_number in snapshot_indices:
+            #snapshots[step_number] = u.copy()
 
     return u, snapshots
 

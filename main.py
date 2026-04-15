@@ -5,13 +5,15 @@
 # 4. Ta fram peaks som punkter.
 # 5. Minstakvadratmetod som hittar den låt i en csv fil som är närmast.
 
-from app.create_heat_transform import SpectralMapAPI
+from app.create_heat_transform import SpectralMapFactory
 import heat_diffusion.heat_solver as hs
 
 if __name__ == "__main__":
 
-    prog = SpectralMapAPI().with_path("song").execute()
-    prog.map.plot()
+    prog = SpectralMapFactory().with_path("song").with_downscaling(24).execute()
+    #prog.plot_audio_downsampled()
+    #prog.plot_audio_smoothed()
+    prog.map.plot_freqs()
 
     """
     original_song = "song"
