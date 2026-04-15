@@ -138,25 +138,22 @@ def plot(xf, mags, peak_indices):
 """
 
 def get_peaks(mags, xf):
-    # 1. Identify all local maxima
-    # Shift arrays to compare curr with prev and next
+
+    # Edit this code to be more readable
     is_peak = (mags[1:-1] > mags[:-2]) & (mags[1:-1] > mags[2:])
     
-    # Get the actual indices where peaks occur (offset by 1 due to slicing)
     peak_indices = np.where(is_peak)[0] + 1
     
+    # early break if no peaks are found
     if len(peak_indices) == 0:
         return np.zeros_like(mags), np.zeros_like(mags)
 
-    # 2. Sort peaks by magnitude (highest first)
     peak_mags = mags[peak_indices]
-    # argsort gives indices that would sort the array; [::-1] makes it descending
     sorted_indices = np.argsort(peak_mags)[::-1]
     
-    # 3. Take the top 100
+    # take top 10
     top_indices = peak_indices[sorted_indices[:10]]
     
-    # 4. Reconstruct the return arrays
     peaks_final = np.zeros_like(mags)
     freqs_final = np.zeros_like(mags)
     
