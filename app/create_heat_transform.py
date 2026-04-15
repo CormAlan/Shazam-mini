@@ -1,3 +1,4 @@
+from fourier_transform.run_fourier_transform import find_spectral_map
 from heat_diffusion.heat_solver import load_audio, solve_heat_equation_1d
 
 def create_heat_transform():
@@ -18,5 +19,7 @@ def create_heat_transform():
         snapshot_indices=snapshot_steps
     )
 
-    return smoothed, sr
+    peaks = find_spectral_map(smoothed, sr)
+
+    return peaks
 
