@@ -1,0 +1,28 @@
+import streamlit as st
+
+st.set_page_config(
+    page_title="Shazam Algorithm",
+    layout="centered",
+    initial_sidebar_state="auto",
+)
+
+hz = 16000
+
+st.title("Shazam Algorithm")
+
+st.audio_input(
+    label="Listen",
+    sample_rate=hz,
+    key="input"
+)
+
+audio = st.session_state.input
+if audio:
+    path = "recording.wav"
+    with open(path, "wb") as f:
+        f.write(audio.getvalue())
+
+
+
+
+

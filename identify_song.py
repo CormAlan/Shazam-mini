@@ -100,6 +100,9 @@ def compare_to_hash(query_table, db_path):
 
     return best_offset, best_count
 
+def run(filename: str):
+    listen_to_input(f"./{filename}.wav")
+
 def main():
     """
     path = "Alan Walker - Faded.wav"
