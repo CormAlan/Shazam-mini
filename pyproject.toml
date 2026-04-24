@@ -10,6 +10,6 @@ dependencies = [
     "numpy>=2.4.4",
     "scikit-learn>=1.8.0",
     "sounddevice>=0.5.5",
-    "streamlit>=1.56.0",
+    "streamlit[charts]>=1.56.0",
     "tqdm>=4.67.3",
 ]

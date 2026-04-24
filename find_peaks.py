@@ -22,11 +22,26 @@ def create_spectrogram(samples, sample_rate):
     return S
 
 
-def find_peak_points(S, neighborhood=100, threshold_db=-60):
+def find_peak_points(S, neighborhood=500, threshold_db=-50):
     filtered = maximum_filter(S, size=neighborhood)
     peaks = (S == filtered) & (S > threshold_db)
     freq_idx, time_idx = np.where(peaks)
     return time_idx, freq_idx
+
+def get_spectrogram_fig(S, time_idx, freq_idx, sample_rate):
+    fig = plt.figure(figsize=(14, 5))
+    plt.imshow(S, origin="lower", aspect="auto", cmap="magma",
+               vmin=-80, vmax=0)
+    plt.colorbar(label="dB")
+    plt.scatter(time_idx, freq_idx, s=200, c="cyan", linewidths=0)
+    plt.xlabel("Time frame")
+    plt.ylabel("Frequency bin")
+    plt.title("Spectrogram with peak points")
+    plt.tight_layout()
+    plt.savefig("spectrogram.png", dpi=150)
+    #plt.show()
+    return fig
+
 
 
 def plot_spectrogram(S, time_idx, freq_idx, sample_rate):

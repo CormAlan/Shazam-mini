@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.io import wavfile
 from scipy.ndimage import maximum_filter
 import sounddevice as sd
-from find_peaks import create_spectrogram, find_peak_points, plot_spectrogram, hash_peaks, save_hash, load_hash
+from find_peaks import create_spectrogram, find_peak_points, get_spectrogram_fig, plot_spectrogram, hash_peaks, save_hash, load_hash
 
 
 def listen_to_microphone(db_path, duration_sec=10, sample_rate=44100):
@@ -48,8 +48,9 @@ def listen_to_input(path, start_sec=None, duration_sec=10):
  
     S = create_spectrogram(samples, sample_rate)
     time_idx, freq_idx = find_peak_points(S)
+    fig = get_spectrogram_fig(S, time_idx, freq_idx, sample_rate)
     query_table = hash_peaks(time_idx, freq_idx)
-    return query_table
+    return query_table, fig
 
 def compare_to_hash(query_table, db_path, *args):
     songs = load_hash(db_path)  # returns a list now
@@ -105,8 +106,8 @@ def plot_histogram(best_offset, best_edges, best_counts, best_count):
     return best_offset, best_count
 
 def run(filename: str):
-    query_table = listen_to_input(f"./{filename}")
-    return compare_to_hash(query_table, db_path="./songs/song_hashes.json")
+    query_table, fig = listen_to_input(f"./{filename}")
+    return compare_to_hash(query_table, db_path="./songs/song_hashes.json"), fig
 
 def main():
     """

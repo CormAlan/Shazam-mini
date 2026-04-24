@@ -7,7 +7,7 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
-hz = 16000
+hz = 44100
 
 st.title("Shazam Algorithm")
 
@@ -23,11 +23,9 @@ if audio:
     path = "recording.wav"
     with open(path, "wb") as f:
         f.write(audio.getvalue())
-    best_hit = run(path)
+    best_hit, fig = run(path)
     st.info(f"Best hit: {best_hit}")
-
-
-
+    st.pyplot(fig)
 
 
 
