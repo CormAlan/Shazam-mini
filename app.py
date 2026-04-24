@@ -1,4 +1,5 @@
 import streamlit as st
+from identify_song import run
 
 st.set_page_config(
     page_title="Shazam Algorithm",
@@ -16,11 +17,15 @@ st.audio_input(
     key="input"
 )
 
+
 audio = st.session_state.input
 if audio:
     path = "recording.wav"
     with open(path, "wb") as f:
         f.write(audio.getvalue())
+    best_hit = run(path)
+    st.info(f"Best hit: {best_hit}")
+
 
 
 

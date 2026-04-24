@@ -22,7 +22,7 @@ def create_spectrogram(samples, sample_rate):
     return S
 
 
-def find_peak_points(S, neighborhood=100, threshold_db=-40):
+def find_peak_points(S, neighborhood=100, threshold_db=-60):
     filtered = maximum_filter(S, size=neighborhood)
     peaks = (S == filtered) & (S > threshold_db)
     freq_idx, time_idx = np.where(peaks)

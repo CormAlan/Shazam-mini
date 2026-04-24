@@ -51,7 +51,7 @@ def listen_to_input(path, start_sec=None, duration_sec=10):
     query_table = hash_peaks(time_idx, freq_idx)
     return query_table
 
-def compare_to_hash(query_table, db_path):
+def compare_to_hash(query_table, db_path, *args):
     songs = load_hash(db_path)  # returns a list now
 
     best_song, best_offset, best_count = None, None, 0
@@ -88,6 +88,10 @@ def compare_to_hash(query_table, db_path):
     print(f"Votes at offset : {best_count}  ({100*best_count/total_hits:.1f}% of hits)")
     print(f"Identified song : {best_song}")
 
+    plot_histogram(best_offset, best_edges, best_counts, best_count) if "plot" in args else None
+    return best_song
+
+def plot_histogram(best_offset, best_edges, best_counts, best_count):
     plt.figure(figsize=(10, 3))
     plt.plot(best_edges[:-1], best_counts, lw=0.8)
     plt.axvline(best_offset, color="red", lw=1.2, label=f"best offset = {best_offset}")
@@ -101,7 +105,8 @@ def compare_to_hash(query_table, db_path):
     return best_offset, best_count
 
 def run(filename: str):
-    listen_to_input(f"./{filename}.wav")
+    query_table = listen_to_input(f"./{filename}")
+    return compare_to_hash(query_table, db_path="./songs/song_hashes.json")
 
 def main():
     """
