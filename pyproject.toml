@@ -9,5 +9,7 @@ dependencies = [
     "matplotlib>=3.10.8",
     "numpy>=2.4.4",
     "scikit-learn>=1.8.0",
+    "sounddevice>=0.5.5",
+    "streamlit[charts]>=1.56.0",
     "tqdm>=4.67.3",
 ]

@@ -22,11 +22,26 @@ def create_spectrogram(samples, sample_rate):
     return S
 
 
-def find_peak_points(S, neighborhood=100, threshold_db=-40):
+def find_peak_points(S, neighborhood=500, threshold_db=-50):
     filtered = maximum_filter(S, size=neighborhood)
     peaks = (S == filtered) & (S > threshold_db)
     freq_idx, time_idx = np.where(peaks)
     return time_idx, freq_idx
+
+def get_spectrogram_fig(S, time_idx, freq_idx, sample_rate):
+    fig = plt.figure(figsize=(14, 5))
+    plt.imshow(S, origin="lower", aspect="auto", cmap="magma",
+               vmin=-80, vmax=0)
+    plt.colorbar(label="dB")
+    plt.scatter(time_idx, freq_idx, s=200, c="cyan", linewidths=0)
+    plt.xlabel("Time frame")
+    plt.ylabel("Frequency bin")
+    plt.title("Spectrogram with peak points")
+    plt.tight_layout()
+    plt.savefig("spectrogram.png", dpi=150)
+    #plt.show()
+    return fig
+
 
 
 def plot_spectrogram(S, time_idx, freq_idx, sample_rate):
@@ -84,6 +99,38 @@ def load_hash(path):
                 )
                 songs.append(song_data)
     return songs
+
+def upload_file(filename: str):
+    # path = "Janji - Heroes Tonight.wav"
+    # path = "Alan Walker - Faded.wav"
+
+
+    # Use os.scandir for better performance over os.listdir
+    # entry.path provides the relative path from the script's root
+
+    try:
+        path = f"./{filename}"
+
+        print(f"Processing: {path}")
+        
+        # Implementation for renaming or processing goes here
+        sample_rate, data = wavfile.read(path)
+
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        samples = data.astype(np.float32) / np.iinfo(np.int16).max
+
+        S = create_spectrogram(samples, sample_rate)
+        time_idx, freq_idx = find_peak_points(S)
+        # plot_spectrogram(S, time_idx, freq_idx, sample_rate)
+        print(f"Found {len(time_idx)} peaks")
+
+        table = hash_peaks(time_idx, freq_idx)
+        save_hash(table, entry.path, "songs/song_hashes.json")
+        return True
+    except Exception as e:
+        print("error uploading song", e)
+        return False
 
 def main():
     # path = "Janji - Heroes Tonight.wav"
