@@ -3,28 +3,47 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 from scipy.ndimage import maximum_filter
+from numpy.lib.stride_tricks import sliding_window_view
 import os
 
 
+def get_samples(data):
+    if np.issubdtype(data.dtype, np.integer):
+        samples = data.astype(np.float32) / np.iinfo(data.dtype).max
+    else:
+        samples = data.astype(np.float32)
+    # safety: guarantee peak ~1
+    m = np.max(np.abs(samples))
+    if m > 0:
+        samples = samples / m
+    return samples
+
 def create_spectrogram(samples, sample_rate):
+
     n_fft = 4096
     hop = n_fft // 8
-    window = np.hanning(n_fft)
+    window = np.hanning(n_fft).astype(np.float32)
 
-    frames = []
-    for start in range(0, len(samples) - n_fft, hop):
-        frame = samples[start:start + n_fft] * window
-        spectrum = np.abs(np.fft.rfft(frame))
-        frames.append(spectrum)
+    samples = np.asarray(samples, dtype=np.float32)
+    if samples.ndim > 1:
+        samples = samples.mean(axis=1)
 
-    S = np.array(frames).T          # shape: (freq_bins, time_frames)
-    S = 20 * np.log10(S + 1e-10)   # convert to dB
+    if len(samples) < n_fft:
+        return np.zeros((n_fft // 2 + 1, 0), dtype=np.float32)
+
+    frames = sliding_window_view(samples, n_fft)[::hop]
+    frames = frames * window                       
+    S = np.abs(np.fft.rfft(frames, axis=-1)).T     
+
+    np.log10(S + 1e-10, out=S)                     
+    S *= 20
     return S
 
 
-def find_peak_points(S, neighborhood=500, threshold_db=-50):
+def find_peak_points(S, neighborhood=50, rel_db=20):
     filtered = maximum_filter(S, size=neighborhood)
-    peaks = (S == filtered) & (S > threshold_db)
+    cutoff = S.max() - rel_db
+    peaks = (S == filtered) & (S > cutoff)
     freq_idx, time_idx = np.where(peaks)
     return time_idx, freq_idx
 
@@ -41,7 +60,6 @@ def get_spectrogram_fig(S, time_idx, freq_idx, sample_rate):
     plt.savefig("spectrogram.png", dpi=150)
     #plt.show()
     return fig
-
 
 
 def plot_spectrogram(S, time_idx, freq_idx, sample_rate):
@@ -118,7 +136,7 @@ def upload_file(filename: str):
 
         if data.ndim > 1:
             data = data.mean(axis=1)
-        samples = data.astype(np.float32) / np.iinfo(np.int16).max
+        samples = get_samples(data)
 
         S = create_spectrogram(samples, sample_rate)
         time_idx, freq_idx = find_peak_points(S)
@@ -150,7 +168,7 @@ def main():
             
                 if data.ndim > 1:
                     data = data.mean(axis=1)
-                samples = data.astype(np.float32) / np.iinfo(np.int16).max
+                samples = get_samples(data)
             
                 S = create_spectrogram(samples, sample_rate)
                 time_idx, freq_idx = find_peak_points(S)

@@ -9,8 +9,8 @@ from tqdm import tqdm
 class _SpectralMap:
     def __init__(self, map_peaks: dict[str, np.ndarray], map_freqs: dict[str, np.ndarray], sr: float | int) -> None:
         self.sr: int = int(sr)
-        self.peaks: np.ndarray = map_peaks
-        self.freqs: np.ndarray = map_freqs
+        self.peaks: dict[str, np.ndarray] = map_peaks
+        self.freqs: dict[str, np.ndarray] = map_freqs
 
     def plot_freqs(self):
         """Plot the SpectralMap (Time vs Frequency)"""
@@ -34,7 +34,7 @@ class _SpectralMap:
             return
 
         # Create the scatter plot
-        plt.figure(figsize=(12, 6))
+        fig = plt.figure(figsize=(12, 6))
         scatter = plt.scatter(times, frequencies, c=magnitudes)
         plt.yscale('log')
 
@@ -44,7 +44,8 @@ class _SpectralMap:
         plt.ylabel('Frequency 1000-Hz')
         plt.ylim(20, max(frequencies)*1.5)
         plt.grid(True)
-        plt.show()
+        #plt.show()
+        return fig
 
     def plot_mags(self):
         """Plot the SpectralMap (Time vs Magnitudes)"""
@@ -83,18 +84,48 @@ class _SpectralMap:
         plt.ylim(0, max(magnitudes))
         plt.show()
 
+bin_width = 10
+def quantize(peak: float) -> int:
+    return int(peak//bin_width)
 
-def find_spectral_map(y_all, sr) -> _SpectralMap:
+def make_hashes(freqs: dict[str, np.ndarray]) -> list[tuple[int, tuple[int, int, int]]]:
+    sorted_windows = sorted(int(k) for k in freqs.keys())
+    max_lookup = 5
+    hashes: list[tuple[int, tuple[int, int, int]]] = []
+    for i, anchor_window in enumerate(sorted_windows):
+        # for every anchor window
+        # get the relevant freqs
+        anchor_freqs = freqs[str(anchor_window)]
+
+        # then for every window in the max_lookup
+        # generate hashes via pairs
+        for dw in range(1, max_lookup):
+            if i + dw >= len(sorted_windows):
+                break
+
+            target_window = sorted_windows[i + dw]
+            target_freqs = freqs[str(target_window)]
+            for f1 in anchor_freqs:
+                for f2 in target_freqs:
+                    h = (quantize(f1), quantize(f2), dw)
+                    key = (anchor_window, h)
+                    hashes.append(key)
+
+    return hashes
+
+
+def find_spectral_map(y_all, sr, number_freqs) -> _SpectralMap:
     """Returns an output dictionary of sample time with its peaks"""
-    subsample = 5
-    sublen = sr * subsample
+    subsample = 0.2
+    sublen = int(sr * subsample)
 
     output_peaks = {}
     output_freaks = {}
 
+    tot_y = len(y_all) - int(sublen)
 
-    for i in tqdm(range(0, len(y_all) - int(sublen), int(sublen)), desc="Looping through song sections..."):
-        y = y_all[i : i + sublen]
+    for window_idx, sample_start in tqdm(enumerate(range(0, int(tot_y), int(sublen)))):
+        y = y_all[sample_start : sample_start + sublen]
 
         N = len(y)
         T = 1.0 / sr
@@ -103,7 +134,12 @@ def find_spectral_map(y_all, sr) -> _SpectralMap:
 
         yf = fft(y)
         xf = fftfreq(N, T)
-        min_freq = 40
+        band_1 = (250, 500)
+        band_2 = (500, 1000)
+        band_3 = (1000, 1500)
+        band_4 = (1500, 2000)
+        bands = [ band_1, band_2, band_3, band_4 ]
+        
 
         #plt.plot(xf, yf)
         #plt.show()
@@ -111,15 +147,21 @@ def find_spectral_map(y_all, sr) -> _SpectralMap:
         mags = 2.0/N * np.abs(yf)
         #plt.plot(mags)
         #plt.show()
-        pos_mask = xf > min_freq
-        xf_pos = xf[pos_mask]
-        mags_pos = mags[pos_mask]
-        peaks, freqs = get_peaks(mags_pos, xf_pos)
 
-        peak_indices = np.where(peaks > 0)
+        for j, band in enumerate(bands):
+            pos_mask =  (xf > band[0]) & (band[1] > xf)
+            xf_pos = xf[pos_mask]
 
-        output_peaks[str(i)] = peaks[peak_indices]
-        output_freaks[str(i)] = freqs[peak_indices]
+            mags_pos = mags[pos_mask]
+            peaks, freqs = get_peaks(mags_pos, xf_pos, number_freqs//len(bands))
+
+            peak_indices = np.where(peaks > 0)
+            if j == 0:
+                output_peaks[str(window_idx)] =  peaks[peak_indices]
+                output_freaks[str(window_idx)] =  freqs[peak_indices]
+            else:
+                output_peaks[str(window_idx)] = np.concatenate([output_peaks[str(window_idx)], peaks[peak_indices]])
+                output_freaks[str(window_idx)] = np.concatenate([output_freaks[str(window_idx)], freqs[peak_indices]])
 
     map = _SpectralMap(output_peaks, output_freaks, sr)
     return map
@@ -137,7 +179,7 @@ def plot(xf, mags, peak_indices):
     plt.show()
 """
 
-def get_peaks(mags, xf):
+def get_peaks(mags, xf, number_freqs):
 
     # Edit this code to be more readable
     is_peak = (mags[1:-1] > mags[:-2]) & (mags[1:-1] > mags[2:])
@@ -151,8 +193,8 @@ def get_peaks(mags, xf):
     peak_mags = mags[peak_indices]
     sorted_indices = np.argsort(peak_mags)[::-1]
     
-    # take top 10
-    top_indices = peak_indices[sorted_indices[:10]]
+    # take top n
+    top_indices = peak_indices[sorted_indices[:number_freqs]]
     
     peaks_final = np.zeros_like(mags)
     freqs_final = np.zeros_like(mags)

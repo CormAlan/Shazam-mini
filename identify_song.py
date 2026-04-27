@@ -2,9 +2,10 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
+from tqdm import tqdm
 from scipy.ndimage import maximum_filter
 import sounddevice as sd
-from find_peaks import create_spectrogram, find_peak_points, get_spectrogram_fig, plot_spectrogram, hash_peaks, save_hash, load_hash
+from find_peaks import create_spectrogram, find_peak_points, get_samples, get_spectrogram_fig, plot_spectrogram, hash_peaks, save_hash, load_hash
 
 
 def listen_to_microphone(db_path, duration_sec=10, sample_rate=44100):
@@ -27,19 +28,25 @@ def listen_to_microphone(db_path, duration_sec=10, sample_rate=44100):
     wavfile.write("recorded.wav", sample_rate, recording)
     print("Saved recording to recorded.wav")
 
-    samples = recording[:, 0].astype(np.float32) / np.iinfo(np.int16).max
+    print("Getting samples")
+    samples = get_samples(recording)
+    print("Create spectrogram")
     S = create_spectrogram(samples, sample_rate)
+    print("found peaks")
     time_idx, freq_idx = find_peak_points(S)
+    print("Hashing peaks")
     query_table = hash_peaks(time_idx, freq_idx)
+    print("finding comparison")
     compare_to_hash(query_table, db_path)
     plot_spectrogram(S, time_idx, freq_idx, sample_rate)
+
 
 
 def listen_to_input(path, start_sec=None, duration_sec=10):
     sample_rate, data = wavfile.read(path)
     if data.ndim > 1:
         data = data.mean(axis=1)
-    samples = data.astype(np.float32) / np.iinfo(np.int16).max
+    samples = get_samples(data)
  
     if start_sec is not None:
         a = int(start_sec * sample_rate)
@@ -57,7 +64,7 @@ def compare_to_hash(query_table, db_path, *args):
 
     best_song, best_offset, best_count = None, None, 0
 
-    for song_name, db in songs:
+    for song_name, db in tqdm(songs):
         offsets = []
         for h, q_times in query_table.items():
             if h not in db:
@@ -69,14 +76,25 @@ def compare_to_hash(query_table, db_path, *args):
         if not offsets:
             continue
 
-        counts, edges = np.histogram(offsets, bins=np.arange(min(offsets), max(offsets) + 2))
-        peak = int(counts.max())
+        tol = 3
+        lo, hi = min(offsets), max(offsets)
+        if lo == hi:
+            # All offsets identical — treat as a single bin
+            counts = np.array([len(offsets)])
+            edges = np.array([lo, lo + 1])
+            smoothed = counts
+        else:
+            counts, edges = np.histogram(offsets, bins=np.arange(lo, hi + 1))
+            window = np.ones(2 * tol + 1, dtype=int)
+            smoothed = np.convolve(counts, window, mode="same")
+        peak = int(smoothed.max())
+        print(f"found counts = {peak} for song name = {song_name}")
 
         if peak > best_count:
-            best_count = peak
             best_offset = int(edges[counts.argmax()])
             best_song = song_name
             best_offsets_arr = np.array(offsets)
+            best_count = peak / len(best_offsets_arr)
             best_edges, best_counts = edges, counts
 
     if best_song is None:
